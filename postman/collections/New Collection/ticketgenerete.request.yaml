@@ -1,0 +1,12 @@
+$kind: http-request
+description: ""
+url: http://127.0.0.1:8000/api/companies/1/agent/complaints/accept/
+method: POST
+body:
+  type: json
+  content: "{\r\n    \"complaint_id\": 9\r\n}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0vrg}}"
+order: 8000

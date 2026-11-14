@@ -25,6 +25,10 @@ DEFAULT_PERMISSION_DEFINITIONS = [
     ("tickets.delete", "Delete tickets"),
     ("reports.view", "View reports"),
     ("settings.manage", "Manage company settings"),
+    ("customers.view", "View customers"),
+    ("customers.create", "Create customers"),
+    ("customers.update", "Update customers"),
+    ("customers.delete", "Delete customers"),
 ]
 
 
@@ -34,9 +38,11 @@ DEFAULT_ROLE_PERMISSIONS = {
         "company.view", "members.view", "roles.view",
         "tickets.view", "tickets.create", "tickets.update",
         "tickets.assign", "reports.view",
+        "customers.view", "customers.create",
+        "customers.update", "customers.delete",
     ],
-    "agent": ["company.view", "tickets.view", "tickets.create", "tickets.update"],
-    "customer": ["tickets.view", "tickets.create"],
+    "agent": ["company.view", "tickets.view", "tickets.create", "tickets.update","customers.view", "customers.create", "customers.update",],
+    "customer": ["tickets.view", "tickets.create" ],
 }
 
 

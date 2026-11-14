@@ -47,3 +47,29 @@ class CompanyMembershipAdmin(admin.ModelAdmin):
 class SocialAccountAdmin(admin.ModelAdmin):
     list_display = ("user", "provider", "email", "created_at")
     search_fields = ("user__username", "email", "provider_user_id")
+from api.models import (
+    Company,
+    CompanyMembership,
+    Customer,
+    Permission,
+    Role,
+    RolePermission,
+    SocialAccount,
+)
+@admin.register(Customer)
+class CustomerAdmin(admin.ModelAdmin):
+    list_display = (
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+        "company",
+        "is_active",
+    )
+    list_filter = ("company", "is_active")
+    search_fields = (
+        "first_name",
+        "last_name",
+        "email",
+        "phone",
+    )

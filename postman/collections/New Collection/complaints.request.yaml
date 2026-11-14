@@ -1,0 +1,18 @@
+$kind: http-request
+description: ""
+url: http://127.0.0.1:8000/api/companies/1/complaints/
+method: POST
+body:
+  type: json
+  content: "{\r
+
+    \    \"subject\": \"login issue\",\r
+
+    \    \"description\": \"complaint access after permission update.\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_16re}}"
+order: 5000

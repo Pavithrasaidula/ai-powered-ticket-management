@@ -1,0 +1,16 @@
+$kind: http-request
+description: ""
+url: http://127.0.0.1:8000/api/companies/1/admin/customers/4/
+method: PATCH
+body:
+  type: json
+  content: "{\r
+
+    \    \"is_active\": false\r
+
+    }\r\n"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0y0c}}"
+order: 13000

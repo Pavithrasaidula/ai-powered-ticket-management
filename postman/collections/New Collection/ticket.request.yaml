@@ -1,0 +1,9 @@
+$kind: http-request
+description: ""
+url: http://127.0.0.1:8000/api/companies/1/customer/tickets/
+method: GET
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_14lv}}"
+order: 9000

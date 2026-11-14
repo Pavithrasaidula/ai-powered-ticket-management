@@ -161,3 +161,117 @@ class CompanyMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} @ {self.company} ({self.role.slug})"
+
+
+
+
+class Customer(models.Model):
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="customers",
+    )
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100, blank=True)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "customers"
+        ordering = ["first_name", "last_name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "email"],
+                name="unique_customer_email_per_company",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.email})"
+
+
+class Complaint(models.Model):
+    STATUS_CHOICES = [
+        ("pending", "Pending"),
+        ("accepted", "Accepted"),
+        ("rejected", "Rejected"),
+    ]
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="complaints",
+    )
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="complaints",
+    )
+    subject = models.CharField(max_length=200)
+    description = models.TextField()
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "complaints"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.subject} - {self.status}"
+
+
+class Ticket(models.Model):
+    STATUS_CHOICES = [
+        ("open", "Open"),
+        ("in_progress", "In Progress"),
+        ("resolved", "Resolved"),
+        ("closed", "Closed"),
+    ]
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="tickets",
+    )
+    complaint = models.OneToOneField(
+        Complaint,
+        on_delete=models.PROTECT,
+        related_name="ticket",
+    )
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="tickets",
+    )
+    assigned_agent = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="assigned_tickets",
+    )
+    ticket_number = models.CharField(
+        max_length=30,
+        unique=True,
+        editable=False,
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="open",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "tickets"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.ticket_number

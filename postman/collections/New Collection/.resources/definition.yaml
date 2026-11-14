@@ -1,0 +1,101 @@
+$kind: collection
+variables:
+  - key: json_web_token_0dna
+    secret: true
+    disabled: false
+  - key: json_web_token_1axf
+    secret: true
+    disabled: false
+  - key: json_web_token_06fa
+    secret: true
+    disabled: false
+  - key: json_web_token_10os
+    secret: true
+    disabled: false
+  - key: json_web_token_19iu
+    secret: true
+    disabled: false
+  - key: json_web_token_1bjg
+    secret: true
+    disabled: false
+  - key: json_web_token_1a09
+    secret: true
+    disabled: false
+  - key: json_web_token_0dv9
+    secret: true
+    disabled: false
+  - key: json_web_token_07rf
+    secret: true
+    disabled: false
+  - key: json_web_token_04xk
+    secret: true
+    disabled: false
+  - key: json_web_token_0mx1
+    secret: true
+    disabled: false
+  - key: json_web_token_0kj6
+    secret: true
+    disabled: false
+  - key: json_web_token_06jl
+    secret: true
+    disabled: false
+  - key: json_web_token_0tbt
+    secret: true
+    disabled: false
+  - key: json_web_token_0zr9
+    secret: true
+    disabled: false
+  - key: json_web_token_0kkp
+    secret: true
+    disabled: false
+  - key: json_web_token_0hxr
+    secret: true
+    disabled: false
+  - key: json_web_token_14ks
+    secret: true
+    disabled: false
+  - key: json_web_token_1dzz
+    secret: true
+    disabled: false
+  - key: json_web_token_0h02
+    secret: true
+    disabled: false
+  - key: json_web_token_1eb1
+    secret: true
+    disabled: false
+  - key: json_web_token_14lv
+    secret: true
+    disabled: false
+  - key: json_web_token_0fl5
+    secret: true
+    disabled: false
+  - key: json_web_token_004p
+    secret: true
+    disabled: false
+  - key: json_web_token_0iwv
+    secret: true
+    disabled: false
+  - key: json_web_token_1321
+    secret: true
+    disabled: false
+  - key: json_web_token_03q2
+    secret: true
+    disabled: false
+  - key: json_web_token_0v6q
+    secret: true
+    disabled: false
+  - key: json_web_token_0vrg
+    secret: true
+    disabled: false
+  - key: json_web_token_04c8
+    secret: true
+    disabled: false
+  - key: json_web_token_12eo
+    secret: true
+    disabled: false
+  - key: json_web_token_0y0c
+    secret: true
+    disabled: false
+  - key: json_web_token_16re
+    secret: true
+    disabled: false

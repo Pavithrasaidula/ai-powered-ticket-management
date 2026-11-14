@@ -1,5 +1,21 @@
 from django.urls import path
-from api.views import GoogleLoginView
+
+from rest_framework_simplejwt.views import TokenRefreshView
+from api.views import (
+    GoogleLoginView,
+    RegisterView,
+    LoginView,
+    CustomerComplaintCreateView,
+    AgentPendingComplaintsView,
+    AgentAcceptComplaintView,
+    CustomerTicketListView,
+    AdminAgentListView,
+AdminCustomerListView,
+AdminCustomerDetailView,
+AdminComplaintListView,
+AdminTicketListView,
+AdminCustomerHistoryView,
+)
 
 urlpatterns = [
     path(
@@ -7,4 +23,69 @@ urlpatterns = [
         GoogleLoginView.as_view(),
         name='google-login'
     ),
+    path(
+        'auth/register/',
+        RegisterView.as_view(),
+        name='register',
+    ),
+    path(
+    'auth/login/',
+    LoginView.as_view(),
+    name='login',
+),
+path(
+    'auth/token/refresh/',
+    TokenRefreshView.as_view(),
+    name='token-refresh',
+),
+ path(
+        'companies/<int:company_id>/complaints/',
+        CustomerComplaintCreateView.as_view(),
+        name='customer-complaint-create',
+),
+path(
+    'companies/<int:company_id>/agent/complaints/',
+    AgentPendingComplaintsView.as_view(),
+    name='agent-pending-complaints',
+),
+path(
+    'companies/<int:company_id>/agent/complaints/accept/',
+    AgentAcceptComplaintView.as_view(),
+    name='agent-accept-complaint'
+),
+path(
+    'companies/<int:company_id>/customer/tickets/',
+    CustomerTicketListView.as_view(),
+    name='customer-ticket-list'
+),
+path(
+    'companies/<int:company_id>/admin/agents/',
+    AdminAgentListView.as_view(),
+    name='admin-agent-list'
+),
+path(
+    'companies/<int:company_id>/admin/customers/<int:customer_id>/',
+    AdminCustomerDetailView.as_view(),
+    name='admin-customer-detail'
+),
+path(
+    'companies/<int:company_id>/admin/customers/',
+    AdminCustomerListView.as_view(),
+    name='admin-customer-list'
+),
+path(
+    'companies/<int:company_id>/admin/complaints/',
+    AdminComplaintListView.as_view(),
+    name='admin-complaint-list'
+),
+path(
+    'companies/<int:company_id>/admin/tickets/',
+    AdminTicketListView.as_view(),
+    name='admin-ticket-list'
+),
+path(
+    'companies/<int:company_id>/admin/customers/<int:customer_id>/history/',
+    AdminCustomerHistoryView.as_view(),
+    name='admin-customer-history'
+),
 ]
