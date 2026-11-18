@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="conversationmessage",
-            index=models.Index(fields=["company", "ticket", "created_at"], name="conv_msg_company_ticket_idx"),
+            index=models.Index(fields=["company", "ticket", "created_at"], name="conversatio_company_a69658_idx"),
         ),
         migrations.CreateModel(
             name="ConversationAttachment",
