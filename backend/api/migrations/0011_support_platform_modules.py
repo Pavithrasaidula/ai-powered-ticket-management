@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
             ],
             options={"db_table": "faq_articles", "ordering": ["question"]},
         ),
-        migrations.AddIndex(model_name="faqarticle", index=models.Index(fields=["company", "is_published"], name="faq_company_pub_idx")),
+        migrations.AddIndex(model_name="faqarticle", index=models.Index(fields=["company", "is_published"], name="faq_article_company_69d7d8_idx")),
         migrations.CreateModel(
             name="SLAPolicy",
             fields=[
