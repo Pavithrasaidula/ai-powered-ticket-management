@@ -17,6 +17,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.exceptions import ValidationError
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 
 # =====================================================
@@ -31,6 +32,8 @@ from api.models import (
     Ticket,
     TicketCategory,
     TicketStatusHistory,
+    ConversationMessage,
+    ConversationAttachment,
     Role,
 
 )
@@ -1228,3 +1231,144 @@ class AdminTicketStatusUpdateView(APIView):
             "ticket_number": ticket.ticket_number,
             "status": ticket.status,
         }, status=status.HTTP_200_OK)
+
+
+
+# =====================================================
+# 20. TICKET CONVERSATIONS AND ATTACHMENTS
+# =====================================================
+
+class TicketConversationView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_access(self, request, company_id, ticket_id):
+        ticket = Ticket.objects.select_related("customer", "assigned_agent").filter(
+            id=ticket_id, company_id=company_id, company__is_active=True
+        ).first()
+        if ticket is None:
+            return None, False, False
+
+        membership = CompanyMembership.objects.select_related("role").filter(
+            user=request.user, company_id=company_id, is_active=True,
+            company__is_active=True
+        ).first()
+        if membership is None:
+            return None, False, False
+
+        role = membership.role.slug
+        is_admin = role == "company_admin"
+        is_agent = role == "agent" and ticket.assigned_agent_id == request.user.id
+        is_customer = (
+            role == "customer"
+            and ticket.customer.email.lower() == (request.user.email or "").lower()
+        )
+        if not (is_admin or is_agent or is_customer):
+            return None, False, False
+        return ticket, is_customer, (is_admin or is_agent)
+
+    def serialize_message(self, message):
+        return {
+            "id": message.id,
+            "ticket_id": message.ticket_id,
+            "sender": {
+                "id": message.sender_id,
+                "username": message.sender.username,
+            },
+            "message": message.message,
+            "is_internal": message.is_internal,
+            "created_at": message.created_at,
+            "attachments": [
+                {
+                    "id": item.id,
+                    "name": item.original_name,
+                    "content_type": item.content_type,
+                    "size": item.size,
+                    "url": item.file.url if item.file else None,
+                }
+                for item in message.attachments.all()
+            ],
+        }
+
+    def get(self, request, company_id, ticket_id):
+        ticket, is_customer, staff = self.get_access(request, company_id, ticket_id)
+        if ticket is None:
+            return Response(
+                {"error": "Ticket not found or you do not have access."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        messages = ticket.conversation_messages.select_related("sender").prefetch_related(
+            "attachments"
+        )
+        if is_customer:
+            messages = messages.filter(is_internal=False)
+        return Response(
+            [self.serialize_message(item) for item in messages],
+            status=status.HTTP_200_OK,
+        )
+
+    @transaction.atomic
+    def post(self, request, company_id, ticket_id):
+        ticket, is_customer, staff = self.get_access(request, company_id, ticket_id)
+        if ticket is None:
+            return Response(
+                {"error": "Ticket not found or you do not have access."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        message_text = str(request.data.get("message", "")).strip()
+        if not message_text:
+            return Response(
+                {"message": "This field is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        is_internal = str(request.data.get("is_internal", "false")).lower() in (
+            "true", "1", "yes"
+        )
+        if is_internal and not staff:
+            return Response(
+                {"error": "Only assigned agents and company admins can create internal notes."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        files = request.FILES.getlist("attachments")
+        if len(files) > 5:
+            return Response(
+                {"error": "You can attach a maximum of 5 files per message."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        for uploaded in files:
+            if uploaded.size > 10 * 1024 * 1024:
+                return Response(
+                    {"error": f"{uploaded.name} exceeds the 10 MB file limit."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        message = ConversationMessage.objects.create(
+            company_id=company_id,
+            ticket=ticket,
+            sender=request.user,
+            message=message_text,
+            is_internal=is_internal,
+        )
+        for uploaded in files:
+            ConversationAttachment.objects.create(
+                company_id=company_id,
+                message=message,
+                file=uploaded,
+                original_name=uploaded.name[:255],
+                content_type=getattr(uploaded, "content_type", "")[:120],
+                size=uploaded.size,
+            )
+
+        message = ConversationMessage.objects.select_related("sender").prefetch_related(
+            "attachments"
+        ).get(pk=message.pk)
+        return Response(
+            {
+                "message": "Conversation message created successfully.",
+                "data": self.serialize_message(message),
+            },
+            status=status.HTTP_201_CREATED,
+        )
