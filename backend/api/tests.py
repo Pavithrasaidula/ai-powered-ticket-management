@@ -92,3 +92,91 @@ class CompanyAuthorizationTests(TestCase):
                 actor=self.admin, user=self.other,
                 company_id=self.company.id, role_id=other_role.id,
             )
+
+
+from rest_framework.test import APIClient
+from api.models import FAQCategory, FAQArticle, SLAPolicy, Notification, CompanySetting
+
+
+class SupportPlatformAPITests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="support-admin", email="support-admin@example.test",
+            password="Strong-test-pass-123"
+        )
+        self.company = create_company_with_admin(
+            name="Support Test Co", slug="support-test-co", admin_user=self.admin
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.admin)
+        self.base = f"/api/companies/{self.company.id}/"
+
+    def test_faq_category_and_article_flow(self):
+        response = self.client.post(
+            self.base + "faq-categories/",
+            {"name": "Accounts", "description": "Account help"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        category_id = response.data["id"]
+
+        response = self.client.post(
+            self.base + "faqs/",
+            {
+                "category": category_id,
+                "question": "How do I reset my password?",
+                "answer": "Use the password reset page.",
+                "is_published": True,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        response = self.client.get(self.base + "faqs/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+
+    def test_sla_policy_creation(self):
+        response = self.client.post(
+            self.base + "admin/sla-policies/",
+            {
+                "name": "Standard",
+                "priority": "medium",
+                "first_response_minutes": 60,
+                "resolution_minutes": 480,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(SLAPolicy.objects.filter(company=self.company).count(), 1)
+
+    def test_company_settings_are_scoped_and_persisted(self):
+        response = self.client.patch(
+            self.base + "admin/settings/",
+            {"business_hours": {"timezone": "Asia/Kolkata"}},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        setting = CompanySetting.objects.get(company=self.company, key="business_hours")
+        self.assertEqual(setting.value["timezone"], "Asia/Kolkata")
+
+        response = self.client.get(self.base + "admin/settings/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["business_hours"]["timezone"], "Asia/Kolkata")
+
+    def test_notification_list_only_returns_current_users_notifications(self):
+        Notification.objects.create(
+            company=self.company,
+            recipient=self.admin,
+            title="Test notification",
+            body="Ticket updated",
+            kind="ticket_status",
+        )
+        response = self.client.get(self.base + "notifications/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+
+        response = self.client.patch(
+            self.base + "notifications/", {"ids": [response.data[0]["id"]]}, format="json"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Notification.objects.get(recipient=self.admin).is_read)
