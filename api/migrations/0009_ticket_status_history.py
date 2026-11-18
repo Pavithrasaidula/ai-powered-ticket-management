@@ -5,6 +5,25 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def record_existing_ticket_statuses(apps, schema_editor):
+    Ticket = apps.get_model("api", "Ticket")
+    TicketStatusHistory = apps.get_model("api", "TicketStatusHistory")
+    database = schema_editor.connection.alias
+
+    records = [
+        TicketStatusHistory(
+            ticket_id=ticket.id,
+            company_id=ticket.company_id,
+            old_status="",
+            new_status=ticket.status,
+            changed_by_id=None,
+            note="Initial status recorded during status-history setup.",
+        )
+        for ticket in Ticket.objects.using(database).all().iterator()
+    ]
+    TicketStatusHistory.objects.using(database).bulk_create(records)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
