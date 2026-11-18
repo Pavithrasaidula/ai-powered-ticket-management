@@ -44,7 +44,6 @@ class Migration(migrations.Migration):
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
                 ("company", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="roles", to="api.company")),
-                ("permissions", models.ManyToManyField(blank=True, related_name="roles", through="api.RolePermission", to="api.permission")),
             ],
             options={
                 "db_table": "roles",
@@ -68,6 +67,16 @@ class Migration(migrations.Migration):
                     models.UniqueConstraint(fields=("role", "permission"), name="unique_permission_per_role"),
                 ],
             },
+        ),
+        migrations.AddField(
+            model_name="role",
+            name="permissions",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="roles",
+                through="api.RolePermission",
+                to="api.permission",
+            ),
         ),
         migrations.CreateModel(
             name="CompanyMembership",
