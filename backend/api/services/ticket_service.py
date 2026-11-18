@@ -5,7 +5,9 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from api.models import Complaint, Ticket, TicketStatusHistory
-from api.services.platform_service import (\n    apply_sla_policy, notify_ticket_customer, create_notification, write_audit\n)
+from api.services.platform_service import (
+    apply_sla_policy, notify_ticket_customer, create_notification, write_audit
+)
 
 
 @transaction.atomic
