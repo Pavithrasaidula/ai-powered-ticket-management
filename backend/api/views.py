@@ -76,7 +76,11 @@ from api.services.ticket_service import (
     update_ticket_status,
 )
 
-from api.services.platform_service import (\n    write_audit, notify_ticket_customer, create_notification\n)\n\nfrom api.services.google_auth_service import (
+from api.services.platform_service import (
+    write_audit, notify_ticket_customer, create_notification
+)
+
+from api.services.google_auth_service import (
     authenticate_google_user,
     GoogleAuthError,
 )
