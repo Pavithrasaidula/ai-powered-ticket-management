@@ -1353,6 +1353,14 @@ class TicketConversationView(APIView):
             is_internal=is_internal,
         )
         for uploaded in files:
+            import os
+            allowed_extensions = {".pdf", ".png", ".jpg", ".jpeg", ".txt", ".csv", ".doc", ".docx", ".xlsx"}
+            extension = os.path.splitext(uploaded.name)[1].lower()
+            if extension not in allowed_extensions:
+                return Response(
+                    {"error": f"File type {extension or 'unknown'} is not allowed."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             ConversationAttachment.objects.create(
                 company_id=company_id,
                 message=message,
@@ -1361,6 +1369,12 @@ class TicketConversationView(APIView):
                 content_type=getattr(uploaded, "content_type", "")[:120],
                 size=uploaded.size,
             )
+
+        # The first staff reply satisfies the first-response SLA clock.
+        if staff and hasattr(ticket, "sla") and ticket.sla.first_responded_at is None:
+            from django.utils import timezone
+            ticket.sla.first_responded_at = timezone.now()
+            ticket.sla.save(update_fields=["first_responded_at"])
 
         message = ConversationMessage.objects.select_related("sender").prefetch_related(
             "attachments"
