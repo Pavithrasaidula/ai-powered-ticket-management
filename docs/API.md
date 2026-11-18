@@ -42,6 +42,7 @@ Company-scoped endpoints require an active membership in the URL company. Admin 
 - `GET companies/{company_id}/live-chat/`
 - `PATCH companies/{company_id}/live-chat/{session_id}/accept/` (agent/admin)
 - `GET/POST companies/{company_id}/live-chat/{session_id}/messages/`: POST `{"message":"Hello"}`
+- `PATCH companies/{company_id}/live-chat/{session_id}/end/`: end an active session (customer owner, assigned agent or company admin)
 - This is REST-based messaging, not a real-time WebSocket transport.
 
 ## Feedback
