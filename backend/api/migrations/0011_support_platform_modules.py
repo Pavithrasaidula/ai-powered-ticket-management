@@ -84,7 +84,7 @@ class Migration(migrations.Migration):
             ],
             options={"db_table": "notifications", "ordering": ["-created_at"]},
         ),
-        migrations.AddIndex(model_name="notification", index=models.Index(fields=["recipient", "is_read", "created_at"], name="notif_recipient_read_idx")),
+        migrations.AddIndex(model_name="notification", index=models.Index(fields=["recipient", "is_read", "created_at"], name="notificatio_recipie_06c470_idx")),
         migrations.CreateModel(
             name="LiveChatSession",
             fields=[
