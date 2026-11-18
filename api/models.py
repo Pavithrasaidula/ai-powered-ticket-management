@@ -338,3 +338,52 @@ class Ticket(models.Model):
 
     def __str__(self):
         return self.ticket_number
+
+
+
+class ConversationMessage(models.Model):
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="conversation_messages"
+    )
+    ticket = models.ForeignKey(
+        Ticket, on_delete=models.CASCADE, related_name="conversation_messages"
+    )
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
+        related_name="ticket_messages"
+    )
+    message = models.TextField()
+    is_internal = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "conversation_messages"
+        ordering = ["created_at", "id"]
+        indexes = [
+            models.Index(fields=["company", "ticket", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Message on {self.ticket.ticket_number} by {self.sender}"
+
+
+class ConversationAttachment(models.Model):
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="conversation_attachments"
+    )
+    message = models.ForeignKey(
+        ConversationMessage, on_delete=models.CASCADE, related_name="attachments"
+    )
+    file = models.FileField(upload_to="ticket_attachments/%Y/%m/")
+    original_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=120, blank=True)
+    size = models.PositiveBigIntegerField(default=0)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "conversation_attachments"
+        ordering = ["uploaded_at", "id"]
+
+    def __str__(self):
+        return self.original_name
