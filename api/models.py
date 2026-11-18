@@ -272,7 +272,7 @@ class TicketStatusHistory(models.Model):
         related_name="ticket_status_history",
     )
     old_status = models.CharField(max_length=20, blank=True)
-    new_status = models.CharField(max_length=20, choices=[("open", "Open"), ("in_progress", "In Progress"), ("resolved", "Resolved"), ("closed", "Closed)])
+    new_status = models.CharField(max_length=20, choices=[("open", "Open"), ("in_progress", "In Progress"), ("resolved", "Resolved"), ("closed", "Closed")])
     changed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
