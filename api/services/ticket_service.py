@@ -5,7 +5,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from api.models import Complaint, Ticket
+from api.models import Complaint, Ticket, TicketStatusHistory
 
 
 @transaction.atomic
@@ -34,7 +34,53 @@ def accept_complaint_and_create_ticket(complaint_id, company_id, agent):
         ticket_number=ticket_number,
     )
 
+    TicketStatusHistory.objects.create(
+        ticket=ticket,
+        company=complaint.company,
+        old_status="",
+        new_status=ticket.status,
+        changed_by=agent,
+        note="Ticket created when the complaint was accepted.",
+    )
+
     complaint.status = "accepted"
     complaint.save(update_fields=["status", "updated_at"])
+
+    return ticket
+
+
+
+@transaction.atomic
+def update_ticket_status(*, ticket, new_status, changed_by, note="", allow_close=False):
+    current_status = ticket.status
+    allowed_transitions = {
+        "open": {"in_progress"},
+        "in_progress": {"resolved"},
+        "resolved": {"closed"} if allow_close else set(),
+        "closed": set(),
+    }
+
+    if new_status == current_status:
+        raise ValidationError({"status": "Ticket is already in this status."})
+
+    if new_status not in allowed_transitions.get(current_status, set()):
+        raise ValidationError({
+            "status": (
+                f"Cannot change ticket status from '{current_status}' "
+                f"to '{new_status}'."
+            )
+        })
+
+    ticket.status = new_status
+    ticket.save(update_fields=["status", "updated_at"])
+
+    TicketStatusHistory.objects.create(
+        ticket=ticket,
+        company=ticket.company,
+        old_status=current_status,
+        new_status=new_status,
+        changed_by=changed_by,
+        note=note,
+    )
 
     return ticket
