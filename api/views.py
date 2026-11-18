@@ -891,6 +891,8 @@ class AdminTicketListView(APIView):
         ).select_related(
             "customer",
             "assigned_agent",
+        ).prefetch_related(
+            "status_history__changed_by",
         ).order_by("-created_at")
 
         data = [{
@@ -904,6 +906,15 @@ class AdminTicketListView(APIView):
             "assigned_agent_id": item.assigned_agent.id,
             "assigned_agent": item.assigned_agent.username,
             "created_at": item.created_at,
+            "status_history": [{
+                "old_status": history.old_status or None,
+                "new_status": history.new_status,
+                "note": history.note,
+                "changed_by": (
+                    history.changed_by.username if history.changed_by else None
+                ),
+                "changed_at": history.created_at,
+            } for history in item.status_history.all()],
         } for item in tickets]
 
         return Response(
