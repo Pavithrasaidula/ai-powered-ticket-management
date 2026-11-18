@@ -1338,10 +1338,18 @@ class TicketConversationView(APIView):
                 {"error": "You can attach a maximum of 5 files per message."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        import os
+        allowed_extensions = {".pdf", ".png", ".jpg", ".jpeg", ".txt", ".csv", ".doc", ".docx", ".xlsx"}
         for uploaded in files:
             if uploaded.size > 10 * 1024 * 1024:
                 return Response(
                     {"error": f"{uploaded.name} exceeds the 10 MB file limit."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            extension = os.path.splitext(uploaded.name)[1].lower()
+            if extension not in allowed_extensions:
+                return Response(
+                    {"error": f"File type {extension or 'unknown'} is not allowed."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -1353,14 +1361,6 @@ class TicketConversationView(APIView):
             is_internal=is_internal,
         )
         for uploaded in files:
-            import os
-            allowed_extensions = {".pdf", ".png", ".jpg", ".jpeg", ".txt", ".csv", ".doc", ".docx", ".xlsx"}
-            extension = os.path.splitext(uploaded.name)[1].lower()
-            if extension not in allowed_extensions:
-                return Response(
-                    {"error": f"File type {extension or 'unknown'} is not allowed."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
             ConversationAttachment.objects.create(
                 company_id=company_id,
                 message=message,
