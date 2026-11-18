@@ -16,7 +16,7 @@ All Django application code, project configuration, migrations, and Python depen
    pip install -r requirements.txt
    ```
 
-3. Copy `.env.example` to `.env` in the repository root or set the environment variables in your shell.
+3. From the repository root, copy `.env.example` to `.env` and set a strong `DJANGO_SECRET_KEY`.
 4. Run migrations and start the development server:
 
    ```powershell
@@ -44,6 +44,20 @@ SQLite is the default for local development. Set `DB_ENGINE=mysql`, `DB_NAME`, `
 - Customer feedback: `/api/companies/{company_id}/tickets/{ticket_id}/feedback/`
 
 See `docs/API.md` for request examples and permissions.
+
+## Docker deployment
+
+Set `DB_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `DJANGO_SECRET_KEY`, and `DJANGO_ALLOWED_HOSTS` in the root `.env` file. Then run:
+
+```powershell
+docker compose up --build -d
+```
+
+The backend container applies migrations and collects static files before starting Gunicorn. Use HTTPS through a reverse proxy and configure the secure cookie/redirect settings for production.
+
+## Validation
+
+GitHub Actions runs Django system checks, checks that model changes have migrations, and executes the test suite on pushes and pull requests.
 
 ## Notes
 
