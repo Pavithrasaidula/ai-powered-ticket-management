@@ -1113,6 +1113,19 @@ class AdminTicketAssignmentView(APIView):
             "assigned_agent",
             "updated_at",
         ])
+        write_audit(
+            company=ticket.company, actor=request.user,
+            action="ticket.assigned" if old_agent_id is None else "ticket.reassigned",
+            resource_type="Ticket", resource_id=ticket.id,
+            details={"previous_agent_id": old_agent_id, "assigned_agent_id": new_agent.id},
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
+        create_notification(
+            company=ticket.company, recipient=new_agent,
+            title="Ticket assigned",
+            body=f"Ticket {ticket.ticket_number} has been assigned to you.",
+            kind="ticket_assigned", ticket=ticket,
+        )
 
         if old_agent_id == new_agent.id:
             message = "This ticket is already assigned to this agent."
