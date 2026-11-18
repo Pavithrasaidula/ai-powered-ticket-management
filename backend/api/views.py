@@ -76,7 +76,7 @@ from api.services.ticket_service import (
     update_ticket_status,
 )
 
-from api.services.google_auth_service import (
+from api.services.platform_service import (\n    write_audit, notify_ticket_customer, create_notification\n)\n\nfrom api.services.google_auth_service import (
     authenticate_google_user,
     GoogleAuthError,
 )
@@ -1369,6 +1369,28 @@ class TicketConversationView(APIView):
                 content_type=getattr(uploaded, "content_type", "")[:120],
                 size=uploaded.size,
             )
+
+        if not is_internal:
+            if staff:
+                notify_ticket_customer(
+                    ticket, "New reply on your ticket",
+                    f"An agent replied to ticket {ticket.ticket_number}.",
+                    "ticket_message",
+                )
+            else:
+                create_notification(
+                    company=ticket.company, recipient=ticket.assigned_agent,
+                    title="New customer reply",
+                    body=f"The customer replied to ticket {ticket.ticket_number}.",
+                    kind="ticket_message", ticket=ticket,
+                )
+        write_audit(
+            company=ticket.company, actor=request.user,
+            action="ticket.internal_note_added" if is_internal else "ticket.message_added",
+            resource_type="ConversationMessage", resource_id=message.id,
+            details={"ticket_id": ticket.id, "attachment_count": len(files)},
+            ip_address=request.META.get("REMOTE_ADDR"),
+        )
 
         # The first staff reply satisfies the first-response SLA clock.
         if staff and hasattr(ticket, "sla") and ticket.sla.first_responded_at is None:
