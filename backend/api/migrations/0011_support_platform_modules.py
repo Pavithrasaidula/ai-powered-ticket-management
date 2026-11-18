@@ -138,7 +138,7 @@ class Migration(migrations.Migration):
             ],
             options={"db_table": "audit_logs", "ordering": ["-created_at"]},
         ),
-        migrations.AddIndex(model_name="auditlog", index=models.Index(fields=["company", "created_at"], name="audit_company_created_idx")),
+        migrations.AddIndex(model_name="auditlog", index=models.Index(fields=["company", "created_at"], name="audit_logs_company_5bd12f_idx")),
         migrations.CreateModel(
             name="CompanySetting",
             fields=[
