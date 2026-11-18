@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from api.models import Complaint, Ticket, TicketStatusHistory
+from api.services.platform_service import apply_sla_policy, notify_ticket_customer
 
 
 @transaction.atomic
@@ -43,7 +44,9 @@ def accept_complaint_and_create_ticket(complaint_id, company_id, agent):
         note="Ticket created when the complaint was accepted.",
     )
 
-    complaint.status = "accepted"
+    apply_sla_policy(ticket)
+    notify_ticket_customer(\n        ticket,\n        "Your ticket has been created",\n        f"Ticket {ticket.ticket_number} has been assigned to an agent.",\n        "ticket_created",\n    )
+\n    complaint.status = "accepted"
     complaint.save(update_fields=["status", "updated_at"])
 
     return ticket
