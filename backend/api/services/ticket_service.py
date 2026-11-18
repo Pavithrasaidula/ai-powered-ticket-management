@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from api.models import Complaint, Ticket, TicketStatusHistory
-from api.services.platform_service import apply_sla_policy, notify_ticket_customer
+from api.services.platform_service import (\n    apply_sla_policy, notify_ticket_customer, create_notification, write_audit\n)
 
 
 @transaction.atomic
@@ -35,6 +35,17 @@ def accept_complaint_and_create_ticket(complaint_id, company_id, agent):
         ticket, "Your ticket has been created",
         f"Ticket {ticket.ticket_number} has been assigned to an agent.",
         "ticket_created",
+    )
+    create_notification(
+        company=ticket.company, recipient=agent,
+        title="New ticket assigned",
+        body=f"Ticket {ticket.ticket_number} has been assigned to you.",
+        kind="ticket_assigned", ticket=ticket,
+    )
+    write_audit(
+        company=ticket.company, actor=agent, action="ticket.created",
+        resource_type="Ticket", resource_id=ticket.id,
+        details={"ticket_number": ticket.ticket_number},
     )
     complaint.status = "accepted"
     complaint.save(update_fields=["status", "updated_at"])
@@ -67,6 +78,11 @@ def update_ticket_status(*, ticket, new_status, changed_by, note="", allow_close
         ticket, "Ticket status updated",
         f"Your ticket {ticket.ticket_number} is now {new_status}.",
         "ticket_status",
+    )
+    write_audit(
+        company=ticket.company, actor=changed_by, action="ticket.status_changed",
+        resource_type="Ticket", resource_id=ticket.id,
+        details={"old_status": current_status, "new_status": new_status, "note": note},
     )
     if new_status == "resolved" and hasattr(ticket, "sla"):
         ticket.sla.resolved_at = timezone.now()
