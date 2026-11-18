@@ -3,7 +3,13 @@ from django.urls import path
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from api.advanced_views import (\n    FAQView, FAQCategoryView, SLAPolicyView, NotificationListView,\n    LiveChatView, LiveChatMessageView, LiveChatAcceptView,\n    TicketFeedbackView, CompanyReportsView, AuditLogView, CompanySettingsView,\n)\n\nfrom api.views import (
+from api.advanced_views import (
+    FAQView, FAQCategoryView, SLAPolicyView, NotificationListView,
+    LiveChatView, LiveChatMessageView, LiveChatAcceptView,
+    TicketFeedbackView, CompanyReportsView, AuditLogView, CompanySettingsView,
+)
+
+from api.views import (
     GoogleLoginView,
     RegisterView,
     LoginView,
@@ -39,7 +45,8 @@ from api.advanced_views import (\n    FAQView, FAQCategoryView, SLAPolicyView, N
 )
 
 
-urlpatterns = [\n
+urlpatterns = [
+
     # FAQ and Knowledge Base
     path('companies/<int:company_id>/faqs/', FAQView.as_view(), name='company-faqs'),
     path('companies/<int:company_id>/faq-categories/', FAQCategoryView.as_view(), name='faq-categories'),
