@@ -31,6 +31,7 @@ from api.views import (
     AdminTicketAssignmentView,
     AgentTicketStatusUpdateView,
     AdminTicketStatusUpdateView,
+    TicketConversationView,
 
     # Admin Ticket Category APIs
     AdminTicketCategoryListView,
@@ -115,6 +116,13 @@ urlpatterns = [
         'companies/<int:company_id>/admin/tickets/<int:ticket_id>/assign/',
         AdminTicketAssignmentView.as_view(),
         name='admin-ticket-assign'
+    ),
+
+    # Ticket Conversations
+    path(
+        'companies/<int:company_id>/tickets/<int:ticket_id>/messages/',
+        TicketConversationView.as_view(),
+        name='ticket-conversation',
     ),
 
     # Ticket Status APIs
