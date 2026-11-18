@@ -387,3 +387,142 @@ class ConversationAttachment(models.Model):
 
     def __str__(self):
         return self.original_name
+
+
+class FAQCategory(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="faq_categories")
+    name = models.CharField(max_length=120)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "faq_categories"
+        ordering = ["name"]
+        constraints = [models.UniqueConstraint(fields=["company", "name"], name="uniq_faq_category_company")]
+
+
+class FAQArticle(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="faq_articles")
+    category = models.ForeignKey(FAQCategory, on_delete=models.PROTECT, related_name="articles")
+    question = models.CharField(max_length=255)
+    answer = models.TextField()
+    is_published = models.BooleanField(default=False)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="faq_articles")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "faq_articles"
+        ordering = ["question"]
+        indexes = [models.Index(fields=["company", "is_published"])]
+
+
+class SLAPolicy(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="sla_policies")
+    name = models.CharField(max_length=120)
+    priority = models.CharField(max_length=20, choices=[("low", "Low"), ("medium", "Medium"), ("high", "High"), ("urgent", "Urgent")], default="medium")
+    first_response_minutes = models.PositiveIntegerField(default=240)
+    resolution_minutes = models.PositiveIntegerField(default=1440)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "sla_policies"
+        constraints = [models.UniqueConstraint(fields=["company", "name"], name="uniq_sla_name_company")]
+
+
+class TicketSLA(models.Model):
+    ticket = models.OneToOneField(Ticket, on_delete=models.CASCADE, related_name="sla")
+    policy = models.ForeignKey(SLAPolicy, on_delete=models.PROTECT, related_name="ticket_slas")
+    response_due_at = models.DateTimeField()
+    resolution_due_at = models.DateTimeField()
+    first_responded_at = models.DateTimeField(null=True, blank=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "ticket_slas"
+
+
+class Notification(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="notifications")
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ticket_notifications")
+    title = models.CharField(max_length=180)
+    body = models.TextField()
+    kind = models.CharField(max_length=40, default="general")
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, null=True, blank=True, related_name="notifications")
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "notifications"
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["recipient", "is_read", "created_at"])]
+
+
+class LiveChatSession(models.Model):
+    STATUS_CHOICES = [("waiting", "Waiting"), ("active", "Active"), ("ended", "Ended")]
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="live_chat_sessions")
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="live_chat_sessions")
+    assigned_agent = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="assigned_live_chats")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="waiting")
+    subject = models.CharField(max_length=200, blank=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "live_chat_sessions"
+        ordering = ["-started_at"]
+
+
+class LiveChatMessage(models.Model):
+    session = models.ForeignKey(LiveChatSession, on_delete=models.CASCADE, related_name="messages")
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="live_chat_messages")
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "live_chat_messages"
+        ordering = ["created_at", "id"]
+
+
+class TicketFeedback(models.Model):
+    ticket = models.OneToOneField(Ticket, on_delete=models.CASCADE, related_name="feedback")
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="ticket_feedback")
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="ticket_feedback")
+    rating = models.PositiveSmallIntegerField()
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "ticket_feedback"
+
+
+class AuditLog(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="audit_logs")
+    actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="audit_logs")
+    action = models.CharField(max_length=100)
+    resource_type = models.CharField(max_length=80)
+    resource_id = models.CharField(max_length=80, blank=True)
+    details = models.JSONField(default=dict, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "audit_logs"
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["company", "created_at"])]
+
+
+class CompanySetting(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="settings")
+    key = models.CharField(max_length=100)
+    value = models.JSONField(default=dict)
+    updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "company_settings"
+        constraints = [models.UniqueConstraint(fields=["company", "key"], name="uniq_setting_key_company")]
