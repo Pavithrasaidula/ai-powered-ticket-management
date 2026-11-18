@@ -2,8 +2,17 @@ $kind: http-request
 description: ""
 url: http://127.0.0.1:8000/api/companies/1/admin/agents/
 method: GET
+body:
+  type: json
+  content: "{\r
+
+    \    \"first_name\": \"Demo\",\r
+
+    \    \"last_name\": \"Agent Updated\"\r
+
+    }"
 auth:
   type: bearer
   credentials:
-    token: "{{json_web_token_0v6q}}"
+    token: "{{json_web_token_00qk}}"
 order: 12000

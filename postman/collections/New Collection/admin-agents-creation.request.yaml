@@ -1,0 +1,26 @@
+$kind: http-request
+description: ""
+url: http://127.0.0.1:8000/api/companies/1/admin/agents/
+method: GET
+body:
+  type: json
+  content: "{\r
+
+    \    \"username\": \"agent2\",\r
+
+    \    \"email\": \"agent2@gmail.com\",\r
+
+    \    \"password\": \"Agent@12345\",\r
+
+    \    \"confirm_password\": \"Agent@12345\",\r
+
+    \    \"first_name\": \"Agent\",\r
+
+    \    \"last_name\": \"Two\"\r
+
+    }"
+auth:
+  type: bearer
+  credentials:
+    token: "{{json_web_token_0wbl}}"
+order: 17000

@@ -1,3 +1,4 @@
+
 from django.conf import settings
 from django.db import models
 
@@ -163,8 +164,6 @@ class CompanyMembership(models.Model):
         return f"{self.user} @ {self.company} ({self.role.slug})"
 
 
-
-
 class Customer(models.Model):
     company = models.ForeignKey(
         Company,
@@ -193,6 +192,32 @@ class Customer(models.Model):
         return f"{self.first_name} {self.last_name} ({self.email})"
 
 
+class TicketCategory(models.Model):
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="ticket_categories",
+    )
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "ticket_categories"
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["company", "name"],
+                name="unique_category_name_per_company",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.company.name} - {self.name}"
+
+
 class Complaint(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
@@ -209,6 +234,13 @@ class Complaint(models.Model):
         Customer,
         on_delete=models.CASCADE,
         related_name="complaints",
+    )
+    category = models.ForeignKey(
+        TicketCategory,
+        on_delete=models.PROTECT,
+        related_name="complaints",
+        null=True,
+        blank=True,
     )
     subject = models.CharField(max_length=200)
     description = models.TextField()

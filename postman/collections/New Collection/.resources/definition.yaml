@@ -99,3 +99,21 @@ variables:
   - key: json_web_token_16re
     secret: true
     disabled: false
+  - key: json_web_token_1b6y
+    secret: true
+    disabled: false
+  - key: json_web_token_176h
+    secret: true
+    disabled: false
+  - key: json_web_token_00qk
+    secret: true
+    disabled: false
+  - key: json_web_token_0o1q
+    secret: true
+    disabled: false
+  - key: json_web_token_12je
+    secret: true
+    disabled: false
+  - key: json_web_token_0wbl
+    secret: true
+    disabled: false
