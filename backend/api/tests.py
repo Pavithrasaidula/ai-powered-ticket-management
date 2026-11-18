@@ -180,3 +180,105 @@ class SupportPlatformAPITests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(Notification.objects.get(recipient=self.admin).is_read)
+
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from api.models import (
+    Customer, TicketCategory, Complaint, Ticket, ConversationMessage,
+    LiveChatSession, TicketFeedback,
+)
+
+
+class ConversationLiveChatAndFeedbackTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="module-admin", email="module-admin@example.test",
+            password="Strong-test-pass-123"
+        )
+        self.customer_user = User.objects.create_user(
+            username="module-customer", email="module-customer@example.test",
+            password="Strong-test-pass-123"
+        )
+        self.agent = User.objects.create_user(
+            username="module-agent", email="module-agent@example.test",
+            password="Strong-test-pass-123"
+        )
+        self.company = create_company_with_admin(
+            name="Module Test Co", slug="module-test-co", admin_user=self.admin
+        )
+        self.customer_role = Role.objects.get(company=self.company, slug="customer")
+        self.agent_role = Role.objects.get(company=self.company, slug="agent")
+        CompanyMembership.objects.create(user=self.customer_user, company=self.company, role=self.customer_role)
+        CompanyMembership.objects.create(user=self.agent, company=self.company, role=self.agent_role)
+        self.customer = Customer.objects.create(
+            company=self.company, first_name="Module", last_name="Customer",
+            email=self.customer_user.email,
+        )
+        self.category = TicketCategory.objects.create(company=self.company, name="General")
+        complaint = Complaint.objects.create(
+            company=self.company, customer=self.customer, category=self.category,
+            subject="Test ticket", description="Test description", status="accepted",
+        )
+        self.ticket = Ticket.objects.create(
+            company=self.company, complaint=complaint, customer=self.customer,
+            assigned_agent=self.agent, ticket_number="TKT-TEST-MODULE-01",
+        )
+        self.client = APIClient()
+        self.base = f"/api/companies/{self.company.id}/"
+
+    def test_customer_agent_conversation_and_internal_note_visibility(self):
+        self.client.force_authenticate(user=self.customer_user)
+        response = self.client.post(
+            self.base + f"tickets/{self.ticket.id}/messages/",
+            {"message": "I need help"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+
+        self.client.force_authenticate(user=self.agent)
+        response = self.client.post(
+            self.base + f"tickets/{self.ticket.id}/messages/",
+            {"message": "Internal investigation note", "is_internal": True},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(ConversationMessage.objects.filter(ticket=self.ticket).count(), 2)
+
+        self.client.force_authenticate(user=self.customer_user)
+        response = self.client.get(self.base + f"tickets/{self.ticket.id}/messages/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertFalse(response.data[0]["is_internal"])
+
+    def test_live_chat_customer_agent_flow(self):
+        self.client.force_authenticate(user=self.customer_user)
+        response = self.client.post(
+            self.base + "live-chat/", {"subject": "Need assistance"}, format="json"
+        )
+        self.assertEqual(response.status_code, 201)
+        session_id = response.data["id"]
+
+        self.client.force_authenticate(user=self.agent)
+        response = self.client.patch(self.base + f"live-chat/{session_id}/accept/")
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post(
+            self.base + f"live-chat/{session_id}/messages/",
+            {"message": "Hello, how can I help?"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.patch(self.base + f"live-chat/{session_id}/end/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(LiveChatSession.objects.get(pk=session_id).status, "ended")
+
+    def test_feedback_requires_closed_ticket_and_one_rating(self):
+        self.ticket.status = "closed"
+        self.ticket.save(update_fields=["status"])
+        self.client.force_authenticate(user=self.customer_user)
+        url = self.base + f"tickets/{self.ticket.id}/feedback/"
+        response = self.client.post(url, {"rating": 5, "comment": "Helpful"}, format="json")
+        self.assertEqual(response.status_code, 201)
+        response = self.client.post(url, {"rating": 4}, format="json")
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(TicketFeedback.objects.filter(ticket=self.ticket).count(), 1)
