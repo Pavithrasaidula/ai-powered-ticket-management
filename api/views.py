@@ -30,6 +30,7 @@ from api.models import (
     Complaint,
     Ticket,
     TicketCategory,
+    TicketStatusHistory,
     Role,
 
 )
@@ -48,7 +49,8 @@ from api.serializers import (
     AgentCreateSerializer,
     AgentUpdateSerializer,
     TicketCategorySerializer,
-        TicketAssignmentSerializer,
+    TicketAssignmentSerializer,
+    TicketStatusUpdateSerializer,
 )
 
 
@@ -68,6 +70,7 @@ from api.permissions import (
 
 from api.services.ticket_service import (
     accept_complaint_and_create_ticket,
+    update_ticket_status,
 )
 
 from api.services.google_auth_service import (
@@ -402,17 +405,27 @@ class CustomerTicketListView(APIView):
         tickets = Ticket.objects.filter(
             company_id=company_id,
             customer=customer,
-        ).values(
-            "id",
-            "ticket_number",
-            "status",
-            "created_at",
-        )
+        ).prefetch_related("status_history__changed_by").order_by("-created_at")
 
-        return Response(
-            list(tickets),
-            status=status.HTTP_200_OK,
-        )
+        data = []
+        for ticket in tickets:
+            data.append({
+                "id": ticket.id,
+                "ticket_number": ticket.ticket_number,
+                "status": ticket.status,
+                "created_at": ticket.created_at,
+                "status_history": [{
+                    "old_status": item.old_status or None,
+                    "new_status": item.new_status,
+                    "note": item.note,
+                    "changed_by": (
+                        item.changed_by.username if item.changed_by else None
+                    ),
+                    "changed_at": item.created_at,
+                } for item in ticket.status_history.all()],
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
 
 
 # =====================================================
@@ -878,6 +891,8 @@ class AdminTicketListView(APIView):
         ).select_related(
             "customer",
             "assigned_agent",
+        ).prefetch_related(
+            "status_history__changed_by",
         ).order_by("-created_at")
 
         data = [{
@@ -891,6 +906,15 @@ class AdminTicketListView(APIView):
             "assigned_agent_id": item.assigned_agent.id,
             "assigned_agent": item.assigned_agent.username,
             "created_at": item.created_at,
+            "status_history": [{
+                "old_status": history.old_status or None,
+                "new_status": history.new_status,
+                "note": history.note,
+                "changed_by": (
+                    history.changed_by.username if history.changed_by else None
+                ),
+                "changed_at": history.created_at,
+            } for history in item.status_history.all()],
         } for item in tickets]
 
         return Response(
@@ -1098,4 +1122,109 @@ class AdminTicketAssignmentView(APIView):
                 "assigned_agent_id": new_agent.id,
                 "assigned_agent": new_agent.username,
             },
+        }, status=status.HTTP_200_OK)
+
+
+
+# =====================================================
+# 18. AGENT TICKET STATUS UPDATE API
+# =====================================================
+
+class AgentTicketStatusUpdateView(APIView):
+    permission_classes = [IsAuthenticated, HasCompanyPermission]
+    required_permission = "tickets.update"
+
+    @transaction.atomic
+    def patch(self, request, company_id, ticket_id):
+        membership = CompanyMembership.objects.filter(
+            user=request.user,
+            company_id=company_id,
+            company__is_active=True,
+            is_active=True,
+            role__slug="agent",
+        ).first()
+
+        if membership is None:
+            return Response(
+                {"error": "Active agent membership is required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        ticket = Ticket.objects.select_for_update().filter(
+            id=ticket_id,
+            company_id=company_id,
+            company__is_active=True,
+            assigned_agent=request.user,
+        ).first()
+
+        if ticket is None:
+            return Response(
+                {"error": "Assigned ticket not found in this company."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = TicketStatusUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            ticket = update_ticket_status(
+                ticket=ticket,
+                new_status=serializer.validated_data["status"],
+                changed_by=request.user,
+                note=serializer.validated_data.get("note", ""),
+                allow_close=False,
+            )
+        except ValidationError as error:
+            return Response(error.detail, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "message": "Ticket status updated successfully.",
+            "ticket_id": ticket.id,
+            "ticket_number": ticket.ticket_number,
+            "status": ticket.status,
+        }, status=status.HTTP_200_OK)
+
+
+# =====================================================
+# 19. ADMIN TICKET STATUS UPDATE API
+# =====================================================
+
+class AdminTicketStatusUpdateView(APIView):
+    permission_classes = [IsAuthenticated, IsCompanyAdmin]
+
+    @transaction.atomic
+    def patch(self, request, company_id, ticket_id):
+        ticket = Ticket.objects.select_for_update().filter(
+            id=ticket_id,
+            company_id=company_id,
+            company__is_active=True,
+        ).first()
+
+        if ticket is None:
+            return Response(
+                {"error": "Ticket not found in this company."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        serializer = TicketStatusUpdateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            ticket = update_ticket_status(
+                ticket=ticket,
+                new_status=serializer.validated_data["status"],
+                changed_by=request.user,
+                note=serializer.validated_data.get("note", ""),
+                allow_close=True,
+            )
+        except ValidationError as error:
+            return Response(error.detail, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            "message": "Ticket status updated successfully.",
+            "ticket_id": ticket.id,
+            "ticket_number": ticket.ticket_number,
+            "status": ticket.status,
         }, status=status.HTTP_200_OK)
