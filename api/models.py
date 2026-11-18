@@ -260,6 +260,37 @@ class Complaint(models.Model):
         return f"{self.subject} - {self.status}"
 
 
+class TicketStatusHistory(models.Model):
+    ticket = models.ForeignKey(
+        "Ticket",
+        on_delete=models.CASCADE,
+        related_name="status_history",
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="ticket_status_history",
+    )
+    old_status = models.CharField(max_length=20, blank=True)
+    new_status = models.CharField(max_length=20, choices=[("open", "Open"), ("in_progress", "In Progress"), ("resolved", "Resolved"), ("closed", "Closed)])
+    changed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ticket_status_changes",
+    )
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "ticket_status_history"
+        ordering = ["created_at", "id"]
+
+    def __str__(self):
+        return f"{self.ticket.ticket_number}: {self.old_status or 'created'} -> {self.new_status}"
+
+
 class Ticket(models.Model):
     STATUS_CHOICES = [
         ("open", "Open"),
