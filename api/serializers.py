@@ -283,3 +283,14 @@ class TicketAssignmentSerializer(serializers.Serializer):
         ).distinct()
 
         return fields
+
+
+# TICKET STATUS UPDATE SERIALIZER
+
+class TicketStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=Ticket.STATUS_CHOICES)
+    note = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        max_length=2000,
+    )
