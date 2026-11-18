@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from api.advanced_views import (
     FAQView, FAQCategoryView, SLAPolicyView, NotificationListView,
-    LiveChatView, LiveChatMessageView, LiveChatAcceptView,
+    LiveChatView, LiveChatMessageView, LiveChatAcceptView, LiveChatEndView,
     TicketFeedbackView, CompanyReportsView, AuditLogView, CompanySettingsView,
 )
 
@@ -61,6 +61,7 @@ urlpatterns = [
     path('companies/<int:company_id>/live-chat/', LiveChatView.as_view(), name='live-chat'),
     path('companies/<int:company_id>/live-chat/<int:session_id>/messages/', LiveChatMessageView.as_view(), name='live-chat-messages'),
     path('companies/<int:company_id>/live-chat/<int:session_id>/accept/', LiveChatAcceptView.as_view(), name='live-chat-accept'),
+    path('companies/<int:company_id>/live-chat/<int:session_id>/end/', LiveChatEndView.as_view(), name='live-chat-end'),
 
     # Feedback, reports, audit and company settings
     path('companies/<int:company_id>/tickets/<int:ticket_id>/feedback/', TicketFeedbackView.as_view(), name='ticket-feedback'),
