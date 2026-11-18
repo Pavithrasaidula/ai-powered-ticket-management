@@ -32,18 +32,6 @@ from api.views import (
     AgentTicketStatusUpdateView,
     AdminTicketStatusUpdateView,
 
-    # Ticket Status APIs
-    path(
-        'companies/<int:company_id>/agent/tickets/<int:ticket_id>/status/',
-        AgentTicketStatusUpdateView.as_view(),
-        name='agent-ticket-status-update'
-    ),
-    path(
-        'companies/<int:company_id>/admin/tickets/<int:ticket_id>/status/',
-        AdminTicketStatusUpdateView.as_view(),
-        name='admin-ticket-status-update'
-    ),
-
     # Admin Ticket Category APIs
     AdminTicketCategoryListView,
     AdminTicketCategoryDetailView,
@@ -127,6 +115,18 @@ urlpatterns = [
         'companies/<int:company_id>/admin/tickets/<int:ticket_id>/assign/',
         AdminTicketAssignmentView.as_view(),
         name='admin-ticket-assign'
+    ),
+
+    # Ticket Status APIs
+    path(
+        'companies/<int:company_id>/agent/tickets/<int:ticket_id>/status/',
+        AgentTicketStatusUpdateView.as_view(),
+        name='agent-ticket-status-update'
+    ),
+    path(
+        'companies/<int:company_id>/admin/tickets/<int:ticket_id>/status/',
+        AdminTicketStatusUpdateView.as_view(),
+        name='admin-ticket-status-update'
     ),
 
     # Admin Ticket Category APIs
