@@ -73,3 +73,17 @@ class CustomerAdmin(admin.ModelAdmin):
         "email",
         "phone",
     )
+
+from api.models import (
+    TicketCategory, Complaint, Ticket, TicketStatusHistory,
+    ConversationMessage, ConversationAttachment, FAQCategory, FAQArticle,
+    SLAPolicy, TicketSLA, Notification, LiveChatSession, LiveChatMessage,
+    TicketFeedback, AuditLog, CompanySetting,
+)
+
+admin.site.register([
+    TicketCategory, Complaint, Ticket, TicketStatusHistory,
+    ConversationMessage, ConversationAttachment, FAQCategory, FAQArticle,
+    SLAPolicy, TicketSLA, Notification, LiveChatSession, LiveChatMessage,
+    TicketFeedback, AuditLog, CompanySetting,
+])
