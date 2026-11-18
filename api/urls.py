@@ -3,7 +3,7 @@ from django.urls import path
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from api.views import (
+from api.advanced_views import (\n    FAQView, FAQCategoryView, SLAPolicyView, NotificationListView,\n    LiveChatView, LiveChatMessageView, LiveChatAcceptView,\n    TicketFeedbackView, CompanyReportsView, AuditLogView, CompanySettingsView,\n)\n\nfrom api.views import (
     GoogleLoginView,
     RegisterView,
     LoginView,
@@ -39,7 +39,28 @@ from api.views import (
 )
 
 
-urlpatterns = [
+urlpatterns = [\n
+    # FAQ and Knowledge Base
+    path('companies/<int:company_id>/faqs/', FAQView.as_view(), name='company-faqs'),
+    path('companies/<int:company_id>/faq-categories/', FAQCategoryView.as_view(), name='faq-categories'),
+
+    # SLA Policies
+    path('companies/<int:company_id>/admin/sla-policies/', SLAPolicyView.as_view(), name='sla-policies'),
+
+    # Notifications
+    path('companies/<int:company_id>/notifications/', NotificationListView.as_view(), name='notifications'),
+
+    # Live Chat
+    path('companies/<int:company_id>/live-chat/', LiveChatView.as_view(), name='live-chat'),
+    path('companies/<int:company_id>/live-chat/<int:session_id>/messages/', LiveChatMessageView.as_view(), name='live-chat-messages'),
+    path('companies/<int:company_id>/live-chat/<int:session_id>/accept/', LiveChatAcceptView.as_view(), name='live-chat-accept'),
+
+    # Feedback, reports, audit and company settings
+    path('companies/<int:company_id>/tickets/<int:ticket_id>/feedback/', TicketFeedbackView.as_view(), name='ticket-feedback'),
+    path('companies/<int:company_id>/admin/reports/', CompanyReportsView.as_view(), name='company-reports'),
+    path('companies/<int:company_id>/admin/audit-logs/', AuditLogView.as_view(), name='audit-logs'),
+    path('companies/<int:company_id>/admin/settings/', CompanySettingsView.as_view(), name='company-settings'),
+
     # Authentication APIs
     path('auth/google/', GoogleLoginView.as_view(), name='google-login'),
     path('auth/register/', RegisterView.as_view(), name='register'),
