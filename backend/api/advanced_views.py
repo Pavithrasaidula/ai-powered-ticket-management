@@ -242,6 +242,11 @@ class CompanyReportsView(APIView):
                 "average_rating": TicketFeedback.objects.filter(company_id=company_id).aggregate(value=Avg("rating"))["value"],
             },
             "live_chats": list(LiveChatSession.objects.filter(company_id=company_id).values("status").annotate(count=Count("id"))),
+            "sla": {
+                "tracked_tickets": TicketSLA.objects.filter(ticket__company_id=company_id).count(),
+                "overdue_first_responses": TicketSLA.objects.filter(ticket__company_id=company_id, first_responded_at__isnull=True, response_due_at__lt=timezone.now()).count(),
+                "overdue_resolutions": TicketSLA.objects.filter(ticket__company_id=company_id, resolved_at__isnull=True, resolution_due_at__lt=timezone.now()).count(),
+            },
         })
 
 
@@ -279,3 +284,29 @@ class CompanySettingsView(APIView):
             obj, _ = CompanySetting.objects.update_or_create(company_id=company_id, key=key, defaults={"value": value, "updated_by": request.user})
             audit(company_id, request.user, "company_setting.updated", "CompanySetting", obj.id, {"key": key}, request)
         return Response({"message": "Company settings updated.", "settings": {x.key: x.value for x in CompanySetting.objects.filter(company_id=company_id)}})
+
+
+class LiveChatEndView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, company_id, session_id):
+        member = membership_for(request.user, company_id)
+        if not member:
+            return Response({"error": "Active company membership required."}, status=403)
+        session = LiveChatSession.objects.filter(id=session_id, company_id=company_id).first()
+        if not session:
+            return Response({"error": "Chat session not found."}, status=404)
+        allowed = (
+            (member.role.slug == "customer" and session.customer_id == request.user.id)
+            or (member.role.slug == "agent" and session.assigned_agent_id == request.user.id)
+            or member.role.slug == "company_admin"
+        )
+        if not allowed:
+            return Response({"error": "You cannot end this chat session."}, status=403)
+        if session.status == "ended":
+            return Response({"message": "Chat session is already ended.", "status": session.status})
+        session.status = "ended"
+        session.ended_at = timezone.now()
+        session.save(update_fields=["status", "ended_at"])
+        audit(company_id, request.user, "live_chat.ended", "LiveChatSession", session.id, request=request)
+        return Response({"message": "Chat session ended.", "status": session.status})
