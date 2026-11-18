@@ -49,4 +49,8 @@ class Migration(migrations.Migration):
                 "ordering": ["created_at", "id"],
             },
         ),
+        migrations.RunPython(
+            record_existing_ticket_statuses,
+            migrations.RunPython.noop,
+        ),
     ]
