@@ -6,6 +6,7 @@
 from django.db import transaction
 from django.db.models import Count, Avg
 from django.utils import timezone
+from django.utils.text import slugify
 from django.contrib.auth.models import User
 
 
@@ -82,6 +83,8 @@ from api.permissions import (
 # SERVICE IMPORTS
 # =====================================================
 
+from api.services.authorization_service import create_company_with_admin
+
 from api.services.ticket_service import (
     accept_complaint_and_create_ticket,
     update_ticket_status,
@@ -143,7 +146,66 @@ class GoogleLoginView(APIView):
 
 
 # =====================================================
-# 2. USER REGISTRATION API
+# 2. COMPANY REGISTRATION API
+# =====================================================
+
+class CompanyRegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    @transaction.atomic
+    def post(self, request):
+        company_name = str(request.data.get("company_name", "")).strip()
+        requested_slug = str(request.data.get("company_slug", "")).strip()
+        slug = slugify(requested_slug or company_name)
+
+        if not company_name:
+            return Response(
+                {"company_name": ["This field is required."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(company_name) > 150 or not slug or len(slug) > 160:
+            return Response(
+                {"error": "Provide a valid company name and company slug."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if Company.objects.filter(slug=slug).exists():
+            return Response(
+                {"company_slug": ["This company URL is already registered."]},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        serializer = RegisterSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        admin_user = serializer.save()
+        company = create_company_with_admin(
+            name=company_name,
+            slug=slug,
+            admin_user=admin_user,
+        )
+        audit(
+            company.id, admin_user, "company.created", "Company",
+            company.id, {"slug": company.slug}, request,
+        )
+        return Response({
+            "message": "Company registered successfully. Please log in to continue.",
+            "company": {
+                "id": company.id,
+                "name": company.name,
+                "slug": company.slug,
+            },
+            "admin": {
+                "id": admin_user.id,
+                "username": admin_user.username,
+                "email": admin_user.email,
+                "role": "company_admin",
+            },
+        }, status=status.HTTP_201_CREATED)
+
+
+# =====================================================
+# 3. CUSTOMER REGISTRATION API
 # =====================================================
 
 class RegisterView(APIView):
@@ -160,10 +222,13 @@ class RegisterView(APIView):
             )
 
         try:
-            company = Company.objects.get(
-                slug="demo-company",
-                is_active=True,
-            )
+            company_id = request.data.get("company_id")
+            companies = Company.objects.filter(is_active=True)
+            if company_id not in (None, ""):
+                company = companies.get(id=company_id)
+            else:
+                # Backward compatibility for installations that still use demo-company.
+                company = companies.get(slug="demo-company")
 
             customer_role = Role.objects.get(
                 company=company,
