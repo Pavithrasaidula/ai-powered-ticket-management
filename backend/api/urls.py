@@ -6,6 +6,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from api.views import (
     GoogleLoginView,
     RegisterView,
+    CompanyRegisterView,
     LoginView,
 
     # Customer APIs
@@ -79,6 +80,7 @@ urlpatterns = [
 
     # Authentication APIs
     path('auth/google/', GoogleLoginView.as_view(), name='google-login'),
+    path('auth/company/register/', CompanyRegisterView.as_view(), name='company-register'),
     path('auth/register/', RegisterView.as_view(), name='register'),
     path('auth/login/', LoginView.as_view(), name='login'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
