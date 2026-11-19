@@ -6,6 +6,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from api.views import (
     GoogleLoginView,
     RegisterView,
+    CompanyRegisterView,
     LoginView,
 
     # Customer APIs
@@ -29,16 +30,57 @@ from api.views import (
     AdminComplaintListView,
     AdminTicketListView,
     AdminTicketAssignmentView,
+    AgentTicketStatusUpdateView,
+    AdminTicketStatusUpdateView,
+    TicketConversationView,
 
     # Admin Ticket Category APIs
     AdminTicketCategoryListView,
     AdminTicketCategoryDetailView,
+
+    # Advanced platform APIs
+    FAQView,
+        FAQCategoryView,
+        SLAPolicyView,
+        NotificationListView,
+        LiveChatView,
+        LiveChatMessageView,
+        LiveChatAcceptView,
+        TicketFeedbackView,
+        CompanyReportsView,
+        AuditLogView,
+        CompanySettingsView,
+        LiveChatEndView,
 )
 
 
 urlpatterns = [
+
+    # FAQ and Knowledge Base
+    path('companies/<int:company_id>/faqs/', FAQView.as_view(), name='company-faqs'),
+    path('companies/<int:company_id>/faq-categories/', FAQCategoryView.as_view(), name='faq-categories'),
+
+    # SLA Policies
+    path('companies/<int:company_id>/admin/sla-policies/', SLAPolicyView.as_view(), name='sla-policies'),
+
+    # Notifications
+    path('companies/<int:company_id>/notifications/', NotificationListView.as_view(), name='notifications'),
+
+    # Live Chat
+    path('companies/<int:company_id>/live-chat/', LiveChatView.as_view(), name='live-chat'),
+    path('companies/<int:company_id>/live-chat/<int:session_id>/messages/', LiveChatMessageView.as_view(), name='live-chat-messages'),
+    path('companies/<int:company_id>/live-chat/<int:session_id>/accept/', LiveChatAcceptView.as_view(), name='live-chat-accept'),
+    path('companies/<int:company_id>/live-chat/<int:session_id>/end/', LiveChatEndView.as_view(), name='live-chat-end'),
+
+    # Feedback, reports, audit and company settings
+    path('companies/<int:company_id>/tickets/<int:ticket_id>/feedback/', TicketFeedbackView.as_view(), name='ticket-feedback'),
+    path('companies/<int:company_id>/admin/reports/', CompanyReportsView.as_view(), name='company-reports'),
+    path('companies/<int:company_id>/admin/audit-logs/', AuditLogView.as_view(), name='audit-logs'),
+    path('companies/<int:company_id>/admin/settings/', CompanySettingsView.as_view(), name='company-settings'),
+
     # Authentication APIs
     path('auth/google/', GoogleLoginView.as_view(), name='google-login'),
+    path('auth/company/register/', CompanyRegisterView.as_view(), name='company-register'),
     path('auth/register/', RegisterView.as_view(), name='register'),
     path('auth/login/', LoginView.as_view(), name='login'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
@@ -113,6 +155,25 @@ urlpatterns = [
         'companies/<int:company_id>/admin/tickets/<int:ticket_id>/assign/',
         AdminTicketAssignmentView.as_view(),
         name='admin-ticket-assign'
+    ),
+
+    # Ticket Conversations
+    path(
+        'companies/<int:company_id>/tickets/<int:ticket_id>/messages/',
+        TicketConversationView.as_view(),
+        name='ticket-conversation',
+    ),
+
+    # Ticket Status APIs
+    path(
+        'companies/<int:company_id>/agent/tickets/<int:ticket_id>/status/',
+        AgentTicketStatusUpdateView.as_view(),
+        name='agent-ticket-status-update'
+    ),
+    path(
+        'companies/<int:company_id>/admin/tickets/<int:ticket_id>/status/',
+        AdminTicketStatusUpdateView.as_view(),
+        name='admin-ticket-status-update'
     ),
 
     # Admin Ticket Category APIs
