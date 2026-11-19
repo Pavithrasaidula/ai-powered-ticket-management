@@ -272,6 +272,23 @@ class ConversationLiveChatAndFeedbackTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(LiveChatSession.objects.get(pk=session_id).status, "ended")
 
+    def test_customer_cannot_view_or_accept_agent_pending_complaints(self):
+        self.client.force_authenticate(user=self.customer_user)
+        response = self.client.get(self.base + "agent/complaints/")
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.post(
+            self.base + "agent/complaints/accept/",
+            {"complaint_id": self.ticket.complaint_id},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_active_agent_can_view_pending_complaints(self):
+        self.client.force_authenticate(user=self.agent)
+        response = self.client.get(self.base + "agent/complaints/")
+        self.assertEqual(response.status_code, 200)
+
     def test_feedback_requires_closed_ticket_and_one_rating(self):
         self.ticket.status = "closed"
         self.ticket.save(update_fields=["status"])
