@@ -57,3 +57,70 @@ Company-scoped endpoints require an active membership in the URL company. Admin 
 
 ## Deployment checklist
 Use DEBUG=false, a strong DJANGO_SECRET_KEY, restricted ALLOWED_HOSTS, HTTPS, MySQL/PostgreSQL, persistent private media storage, backups, static file serving, log monitoring and malware scanning for uploaded files. Do not expose Django's development server in production.
+
+
+## Complete Postman endpoint map
+
+Use these full local URLs in Postman. Replace the numeric IDs with IDs returned by earlier requests.
+
+### Authentication
+| Method | URL | Purpose |
+|---|---|---|
+| POST | `http://127.0.0.1:8000/api/auth/company/register/` | Register a company and its first admin |
+| POST | `http://127.0.0.1:8000/api/auth/register/` | Register a customer using `company_id` |
+| POST | `http://127.0.0.1:8000/api/auth/login/` | Login for admin, agent or customer |
+| POST | `http://127.0.0.1:8000/api/auth/google/` | Google login |
+| POST | `http://127.0.0.1:8000/api/auth/token/refresh/` | Refresh an access token |
+
+### Customer
+| Method | URL | Purpose |
+|---|---|---|
+| POST | `http://127.0.0.1:8000/api/companies/{company_id}/complaints/` | Create a complaint |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/customer/tickets/` | View own tickets and status history |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/tickets/{ticket_id}/messages/` | View ticket conversation |
+| POST | `http://127.0.0.1:8000/api/companies/{company_id}/tickets/{ticket_id}/messages/` | Reply to ticket |
+| POST | `http://127.0.0.1:8000/api/companies/{company_id}/tickets/{ticket_id}/feedback/` | Rate a resolved/closed ticket |
+| POST | `http://127.0.0.1:8000/api/companies/{company_id}/live-chat/` | Start live chat |
+| PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/live-chat/{session_id}/end/` | End own live chat |
+
+### Agent
+| Method | URL | Purpose |
+|---|---|---|
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/agent/complaints/` | View pending complaints |
+| POST | `http://127.0.0.1:8000/api/companies/{company_id}/agent/complaints/accept/` | Accept complaint and create ticket |
+| PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/agent/tickets/{ticket_id}/status/` | Update assigned ticket status |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/live-chat/` | View available/assigned chats |
+| PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/live-chat/{session_id}/accept/` | Accept a waiting chat |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/live-chat/{session_id}/messages/` | View chat messages |
+| POST | `http://127.0.0.1:8000/api/companies/{company_id}/live-chat/{session_id}/messages/` | Send chat message |
+| PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/live-chat/{session_id}/end/` | End assigned chat |
+
+### Admin
+| Method | URL | Purpose |
+|---|---|---|
+| GET, POST | `http://127.0.0.1:8000/api/companies/{company_id}/admin/agents/` | List or create agents |
+| GET, PUT, PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/admin/agents/{agent_id}/` | View, update or activate/deactivate agent |
+| GET, POST | `http://127.0.0.1:8000/api/companies/{company_id}/admin/customers/` | List or create customer records |
+| GET, PUT, PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/admin/customers/{customer_id}/` | View or update customer |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/admin/customers/{customer_id}/history/` | View customer complaint/ticket history |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/admin/complaints/` | View company complaints |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/admin/tickets/` | View company tickets |
+| PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/admin/tickets/{ticket_id}/assign/` | Assign ticket to an agent |
+| PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/admin/tickets/{ticket_id}/status/` | Update ticket status |
+| GET, POST | `http://127.0.0.1:8000/api/companies/{company_id}/admin/categories/` | List or create ticket categories |
+| GET, PUT, PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/admin/categories/{category_id}/` | View or update ticket category |
+| GET, POST | `http://127.0.0.1:8000/api/companies/{company_id}/faq-categories/` | List or create FAQ categories |
+| GET, POST | `http://127.0.0.1:8000/api/companies/{company_id}/faqs/` | List published FAQs or create FAQ |
+| GET, POST | `http://127.0.0.1:8000/api/companies/{company_id}/admin/sla-policies/` | List or create SLA policies |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/admin/reports/` | View company reports |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/admin/audit-logs/` | View audit logs |
+| GET, PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/admin/settings/` | View or update company settings |
+
+### Shared company-member APIs
+| Method | URL | Purpose |
+|---|---|---|
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/notifications/` | View own notifications |
+| PATCH | `http://127.0.0.1:8000/api/companies/{company_id}/notifications/` | Mark own notifications as read |
+| GET | `http://127.0.0.1:8000/api/companies/{company_id}/faqs/` | View published company FAQs |
+
+For protected requests, select **Bearer Token** in Postman and paste the access token returned by the matching role's login request. Use separate login requests/tokens for Admin, Agent and Customer.
