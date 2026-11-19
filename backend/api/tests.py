@@ -98,6 +98,84 @@ from rest_framework.test import APIClient
 from api.models import FAQCategory, FAQArticle, SLAPolicy, Notification, CompanySetting
 
 
+class CompanyOnboardingAPITests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_company_registration_creates_admin_and_default_roles(self):
+        response = self.client.post(
+            "/api/auth/company/register/",
+            {
+                "company_name": "Onboarding Test Co",
+                "username": "onboarding-admin",
+                "email": "onboarding-admin@example.test",
+                "password": "Strong-test-pass-123",
+                "confirm_password": "Strong-test-pass-123",
+                "first_name": "Onboarding",
+                "last_name": "Admin",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        company_id = response.data["company"]["id"]
+        membership = CompanyMembership.objects.get(
+            user__username="onboarding-admin", company_id=company_id
+        )
+        self.assertEqual(membership.role.slug, "company_admin")
+        self.assertEqual(
+            set(Role.objects.filter(company_id=company_id).values_list("slug", flat=True)),
+            {"company_admin", "manager", "agent", "customer"},
+        )
+
+    def test_customer_registration_joins_selected_company(self):
+        admin = User.objects.create_user(
+            username="tenant-admin", email="tenant-admin@example.test",
+            password="Strong-test-pass-123",
+        )
+        company = create_company_with_admin(
+            name="Customer Signup Co", slug="customer-signup-co", admin_user=admin
+        )
+        response = self.client.post(
+            "/api/auth/register/",
+            {
+                "company_id": company.id,
+                "username": "tenant-customer",
+                "email": "tenant-customer@example.test",
+                "password": "Strong-test-pass-123",
+                "confirm_password": "Strong-test-pass-123",
+                "first_name": "Tenant",
+                "last_name": "Customer",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201)
+        membership = CompanyMembership.objects.get(
+            user__username="tenant-customer", company=company
+        )
+        self.assertEqual(membership.role.slug, "customer")
+
+    def test_company_registration_rejects_duplicate_slug(self):
+        admin = User.objects.create_user(
+            username="existing-admin", email="existing-admin@example.test",
+            password="Strong-test-pass-123",
+        )
+        create_company_with_admin(
+            name="Existing Company", slug="existing-company", admin_user=admin
+        )
+        response = self.client.post(
+            "/api/auth/company/register/",
+            {
+                "company_name": "Existing Company",
+                "username": "another-admin",
+                "email": "another-admin@example.test",
+                "password": "Strong-test-pass-123",
+                "confirm_password": "Strong-test-pass-123",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 409)
+
+
 class SupportPlatformAPITests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user(
