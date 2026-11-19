@@ -235,7 +235,7 @@ class RegisterView(APIView):
                 slug="customer",
             )
 
-        except (Company.DoesNotExist, Role.DoesNotExist):
+        except (Company.DoesNotExist, Role.DoesNotExist, ValueError, TypeError):
             return Response(
                 {"error": "Company or customer role not found."},
                 status=status.HTTP_400_BAD_REQUEST,
