@@ -3,12 +3,6 @@ from django.urls import path
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
-from api.advanced_views import (
-    FAQView, FAQCategoryView, SLAPolicyView, NotificationListView,
-    LiveChatView, LiveChatMessageView, LiveChatAcceptView, LiveChatEndView,
-    TicketFeedbackView, CompanyReportsView, AuditLogView, CompanySettingsView,
-)
-
 from api.views import (
     GoogleLoginView,
     RegisterView,
@@ -42,6 +36,20 @@ from api.views import (
     # Admin Ticket Category APIs
     AdminTicketCategoryListView,
     AdminTicketCategoryDetailView,
+
+    # Advanced platform APIs
+    FAQView,
+        FAQCategoryView,
+        SLAPolicyView,
+        NotificationListView,
+        LiveChatView,
+        LiveChatMessageView,
+        LiveChatAcceptView,
+        TicketFeedbackView,
+        CompanyReportsView,
+        AuditLogView,
+        CompanySettingsView,
+        LiveChatEndView,
 )
 
 
