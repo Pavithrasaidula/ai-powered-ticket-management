@@ -323,6 +323,19 @@ class AgentPendingComplaintsView(APIView):
     required_permission = "tickets.view"
 
     def get(self, request, company_id):
+        membership = CompanyMembership.objects.select_related("role").filter(
+            user=request.user,
+            company_id=company_id,
+            company__is_active=True,
+            is_active=True,
+            role__slug="agent",
+        ).first()
+        if membership is None:
+            return Response(
+                {"error": "Active agent membership is required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         complaints = Complaint.objects.filter(
             company_id=company_id,
             company__is_active=True,
@@ -351,6 +364,19 @@ class AgentAcceptComplaintView(APIView):
     required_permission = "tickets.create"
 
     def post(self, request, company_id):
+        membership = CompanyMembership.objects.select_related("role").filter(
+            user=request.user,
+            company_id=company_id,
+            company__is_active=True,
+            is_active=True,
+            role__slug="agent",
+        ).first()
+        if membership is None:
+            return Response(
+                {"error": "Active agent membership is required."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         complaint_id = request.data.get("complaint_id")
 
         if not complaint_id:
