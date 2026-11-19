@@ -10,7 +10,7 @@ Content-Type: application/json
 Company-scoped endpoints require an active membership in the URL company. Admin endpoints require the company_admin role.
 
 ## Authentication
-- `POST auth/register/`: username, email, password, confirm_password, first_name?, last_name?
+- `POST auth/company/register/`: company_name, company_slug? plus username, email, password, confirm_password, first_name?, last_name? Creates a company and its first company_admin user. Log in after registration.\n- `POST auth/register/`: company_id, username, email, password, confirm_password, first_name?, last_name? Registers a customer in the selected company. If company_id is omitted, the legacy demo-company is used when present.
 - `POST auth/login/`: email, password
 - `POST auth/google/`: id_token
 - `POST auth/token/refresh/`: refresh
